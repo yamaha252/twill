@@ -5,8 +5,8 @@
                  :value="savedBlocks"
                  group="blocks"
                  :move="handleOnMove"
-                 @end="e => handleOnEnd(moveBlock, moveBlockToEditor)"
-                 :options="dragOptions">
+                 @end="handleOnEnd(moveBlock, moveBlockToEditor)"
+                 v-bind="dragOptions">
         <transition-group name="draggable_list"
                           tag='div'>
           <div class="blocks__item"
@@ -21,7 +21,6 @@
                               :opened="opened"
                               :with-handle="!isSettings"
                               :with-actions="!isSettings"
-                              :with-move-dropdown="!isSettings"
                               @expand="setOpened"
                               v-if="availableBlocks.length">
                 <template v-for="availableBlock in availableBlocks">
@@ -215,6 +214,7 @@
         }
       },
       handleOnEnd (moveFn, moveBlockToEditorFn) {
+        if (!this.nextMove) return
         const {
           block,
           editorName,
@@ -290,7 +290,7 @@
 
 <style lang="scss" scoped>
   .blocks {
-    margin-top: 20px; // margin-top:35px;
+    margin-top: 20px;
   }
 
   .blocks__container {
@@ -318,6 +318,10 @@
 
     &.sortable-ghost {
       opacity: 0.5;
+    }
+
+    .blocks:first-child {
+      margin-top: 35px;
     }
   }
 

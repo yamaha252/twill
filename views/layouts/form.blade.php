@@ -46,8 +46,8 @@
     <div class="form" v-sticky data-sticky-id="navbar" data-sticky-offset="0" data-sticky-topoffset="12">
         <div class="navbar navbar--sticky" data-sticky-top="navbar">
             @php
-                $additionalFieldsets = $additionalFieldsets ?? $formBuilder->getAdditionalFieldsets();
-                if(!$disableContentFieldset && $formBuilder->hasFieldsInBaseFieldset()) {
+                $additionalFieldsets = $additionalFieldsets ?? isset($formBuilder) ? $formBuilder->getAdditionalFieldsets() : [];
+                if(!$disableContentFieldset && isset($formBuilder) && $formBuilder->hasFieldsInBaseFieldset()) {
                     array_unshift($additionalFieldsets, [
                         'fieldset' => 'content',
                         'label' => $contentFieldsetLabel ?? twillTrans('twill::lang.form.content')
@@ -95,7 +95,7 @@
                                           previous-url="{{ $parentPreviousUrl ?? '' }}"
                                           next-url="{{ $parentNextUrl ?? '' }}"></a17-page-nav>
 
-                            @if ($formBuilder->hasSideForm())
+                            @if (isset($formBuilder) && $formBuilder->hasSideForm())
                                 {!! $formBuilder->renderSideForm() !!}
                             @else
                                 @hasSection('sideFieldset')
@@ -111,7 +111,7 @@
                         </div>
                     </aside>
                     <section class="col col--primary" data-sticky-top="publisher">
-                        @if ($formBuilder->hasForm())
+                        @if (isset($formBuilder) && $formBuilder->hasForm())
                             {!! $formBuilder->renderBaseForm() !!}
                         @else
                             @unless($disableContentFieldset)
@@ -155,7 +155,7 @@
     </a17-modal>
     <a17-editor v-if="editor" ref="editor"
                 bg-color="{{ config('twill.block_editor.background_color') ?? '#FFFFFF' }}"></a17-editor>
-    <a17-previewer ref="preview"></a17-previewer>
+    <a17-previewer ref="preview" :breakpoints-config="{{ json_encode(config('twill.preview.breakpoints')) }}"></a17-previewer>
     <a17-dialog ref="warningContentEditor" modal-title="{{ twillTrans('twill::lang.form.dialogs.delete.title') }}"
                 confirm-label="{{ twillTrans('twill::lang.form.dialogs.delete.confirm') }}">
         <p class="modal--tiny-title">

@@ -87,13 +87,11 @@ class CapsulesTest extends TestCase
      */
     public function testCapsuleProviderWasRegistered()
     {
-        class_exists(
-            "App\Twill\Capsules\{$this->capsuleClassName}\Models\{$this->capsuleModelName}"
-        );
-
-        class_exists('A17\Twill\Services\Modules\HasModules');
-
-        // @todo: Validate this test.
+        $capsule = TwillCapsules::getCapsuleForModule($this->capsuleName);
+        
+        $this->assertTrue(class_exists("{$capsule->getModelNamespace()}\\{$this->capsuleModelName}"));
+        $this->assertEquals("App\\Twill\\Capsules", $capsule->getBaseNamespace());
+        $this->assertEquals("App\\Twill\\Capsules\\".$this->capsuleClassName, $capsule->namespace);
     }
 
     /**
@@ -262,11 +260,10 @@ class CapsulesTest extends TestCase
     public function selectCapsule()
     {
         foreach ($this->capsules as $capsule) {
-            $class = Str::studly($capsule);
+            $migrationDeclared = collect(get_declared_classes())
+                ->contains(fn($class) => Str::contains($class, "create_{$capsule}_tables"));
 
-            $class = "Create{$class}Tables";
-
-            if (! collect(get_declared_classes())->contains($class)) {
+            if (! $migrationDeclared) {
                 $this->capsuleName = $capsule;
 
                 break;
@@ -296,6 +293,8 @@ class CapsulesTest extends TestCase
                 '--hasRevisions' => true,
                 '--hasNesting' => true,
                 '--generatePreview' => true,
+                '--factory' => true,
+                '--seeder' => true,
             ])
                 ->run()
         );

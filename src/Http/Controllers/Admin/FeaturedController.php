@@ -88,7 +88,7 @@ class FeaturedController extends Controller
             'bucketSourceTitle' => $featuredSection['sourceHeaderTitle'] ?? null,
             'bucketsSectionIntro' => $featuredSection['sectionIntroText'] ?? null,
             'restricted' => $featuredSection['restricted'] ?? true,
-            'saveUrl' => $urlGenerator->route("twill.$routePrefix.$featuredSectionKey.save"),
+            'saveUrl' => $urlGenerator->route(config('twill.admin_route_name_prefix') . "$routePrefix.$featuredSectionKey.save"),
         ]);
     }
 
@@ -164,7 +164,7 @@ class FeaturedController extends Controller
                     ($bucketable['scopes'] ?? []) + ($scopes ?? []),
                     $bucketable['orders'] ?? [],
                     $bucketable['per_page'] ?? $request->get('offset') ?? 10,
-                    $forcePagination = true
+                    true
                 )->appends('bucketable', $module);
 
                 $fetchedModules[$module] = $items;

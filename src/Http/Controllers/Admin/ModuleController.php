@@ -9,7 +9,6 @@ use A17\Twill\Helpers\FlashLevel;
 use A17\Twill\Models\Behaviors\HasSlug;
 use A17\Twill\Models\Contracts\TwillModelContract;
 use A17\Twill\Models\Contracts\TwillSchedulableModel;
-use A17\Twill\Models\Group;
 use A17\Twill\Repositories\ModuleRepository;
 use A17\Twill\Services\Breadcrumbs\Breadcrumbs;
 use A17\Twill\Services\Forms\Fields\BaseFormField;
@@ -31,6 +30,7 @@ use A17\Twill\Services\Listings\Filters\FreeTextSearch;
 use A17\Twill\Services\Listings\Filters\QuickFilter;
 use A17\Twill\Services\Listings\Filters\QuickFilters;
 use A17\Twill\Services\Listings\Filters\TableFilters;
+use A17\Twill\Services\Listings\Filters\TwillBaseFilter;
 use A17\Twill\Services\Listings\TableColumn;
 use A17\Twill\Services\Listings\TableColumns;
 use A17\Twill\Services\Listings\TableDataContext;
@@ -231,6 +231,13 @@ abstract class ModuleController extends Controller
     protected $titleColumnKey = 'title';
 
     /**
+     * Label of the index column to use as name column.
+     *
+     * @var string
+     */
+    protected $titleColumnLabel = 'Title';
+
+    /**
      * Name of the index column to use as identifier column.
      *
      * @var string
@@ -243,6 +250,13 @@ abstract class ModuleController extends Controller
      * @var string
      */
     protected $titleFormKey;
+
+    /**
+     * Label of the title field in forms.
+     *
+     * @var string
+     */
+    protected $titleFormLabel = 'Title';
 
     /**
      * Feature field name if the controller is using the feature route (defaults to "featured").
@@ -643,6 +657,30 @@ abstract class ModuleController extends Controller
     }
 
     /**
+     * Sets the label to use for title column, defaults to `Title`.
+     */
+    protected function setTitleColumnLabel(string $titleColumnLabel): void
+    {
+        $this->titleColumnLabel = $titleColumnLabel;
+    }
+
+    /**
+     * Sets the field to use as title in forms, defaults to `title`.
+     */
+    protected function setTitleFormKey(string $titleFormKey): void
+    {
+        $this->titleFormKey = $titleFormKey;
+    }
+
+    /**
+     * Sets the label to use for title field in forms, defaults to `Title`.
+     */
+    protected function setTitleFormLabel(string $titleFormLabel): void
+    {
+        $this->titleFormLabel = $titleFormLabel;
+    }
+
+    /**
      * Usually not required, but in case customization is needed you can use this method to set the name of the model
      * this controller acts on.
      */
@@ -788,6 +826,7 @@ abstract class ModuleController extends Controller
             $columns->add(
                 Text::make()
                     ->field($this->titleColumnKey)
+                    ->title($this->titleColumnKey === 'title' && $this->titleColumnLabel === 'Title' ? twillTrans('twill::lang.main.title') : $this->titleColumnLabel)
                     ->sortable()
                     ->linkToEdit()
             );
@@ -879,6 +918,7 @@ abstract class ModuleController extends Controller
                         ->sortKey($indexColumn['sortKey'] ?? null)
                         ->optional($indexColumn['optional'] ?? false)
                         ->relation($indexColumn['relationship'])
+                        ->sortable($indexColumn['sort'] ?? false)
                 );
             } elseif ($indexColumn['present'] ?? false) {
                 $columns->add(
@@ -1730,6 +1770,7 @@ abstract class ModuleController extends Controller
             'permalink' => $this->getIndexOption('permalink'),
             'bulkEdit' => $this->getIndexOption('bulkEdit'),
             'titleFormKey' => $this->titleFormKey ?? $this->titleColumnKey,
+            'titleFormLabel' => $this->titleFormLabel ?? $this->titleColumnLabel,
             'baseUrl' => $baseUrl,
             'permalinkPrefix' => $this->getPermalinkPrefix($baseUrl),
             'additionalTableActions' => $this->additionalTableActions(),
@@ -1779,7 +1820,7 @@ abstract class ModuleController extends Controller
         // Get the applied quick filter..
         if (array_key_exists('status', $requestFilters)) {
             $filter = $this->quickFilters()->filter(
-                fn(QuickFilter $filter) => $filter->getQueryString() === $requestFilters['status']
+                fn(TwillBaseFilter $filter) => $filter->getQueryString() === $requestFilters['status']
             )->first();
 
             if ($filter !== null) {
@@ -1896,7 +1937,7 @@ abstract class ModuleController extends Controller
                         BasicFilter::make()
                             ->queryString($queryString)
                             ->options($value)
-                            ->apply(function (Builder $builder, int $value) use ($filterKey) {
+                            ->apply(function (Builder $builder, mixed $value) use ($filterKey) {
                                 $builder->where($filterKey, '=', $value);
                             })
                     );
@@ -2196,7 +2237,7 @@ abstract class ModuleController extends Controller
             $item = $this->repository->newInstance();
         }
 
-        $fullRoutePrefix = 'twill.' . ($this->routePrefix ? $this->routePrefix . '.' : '') . $this->moduleName . '.';
+        $fullRoutePrefix = config('twill.admin_route_name_prefix') . ($this->routePrefix ? $this->routePrefix . '.' : '') . $this->moduleName . '.';
         $previewRouteName = $fullRoutePrefix . 'preview';
         $restoreRouteName = $fullRoutePrefix . 'restoreRevision';
 
@@ -2210,6 +2251,7 @@ abstract class ModuleController extends Controller
                 'moduleName' => $this->moduleName,
                 'routePrefix' => $this->routePrefix,
                 'titleFormKey' => $this->titleFormKey ?? $this->titleColumnKey,
+                'titleFormLabel' => $this->titleFormLabel ?? $this->titleColumnLabel,
                 'publish' => $item->canPublish ?? true,
                 'publishDate24Hr' => Config::get('twill.publish_date_24h') ?? false,
                 'publishDateFormat' => Config::get('twill.publish_date_format') ?? null,
@@ -2233,7 +2275,7 @@ abstract class ModuleController extends Controller
                 'editor' => Config::get('twill.enabled.block-editor') && $this->moduleHas(
                     'blocks'
                 ) && ! $this->disableEditor,
-                'blockPreviewUrl' => Route::has('twill.blocks.preview') ? URL::route('twill.blocks.preview') : '#',
+                'blockPreviewUrl' => Route::has(config('twill.admin_route_name_prefix') . 'blocks.preview') ? URL::route(config('twill.admin_route_name_prefix') . 'blocks.preview') : '#',
                 'revisions' => $this->moduleHas('revisions') ? $item->revisionsArray() : null,
                 'submitOptions' => $this->getSubmitOptions($item),
                 'groupUserMapping' => $this->getGroupUserMapping(),
@@ -2376,17 +2418,18 @@ abstract class ModuleController extends Controller
         foreach ($moduleParts as $index => $name) {
             if (array_key_last($moduleParts) !== $index) {
                 $singularName = Str::singular($name);
-                $modelClass = config('twill.namespace') . '\\Models\\' . Str::studly($singularName);
+                $modelName = Str::studly($singularName);
+                $modelClass = config('twill.namespace') . '\\Models\\' . $modelName;
 
                 if (! @class_exists($modelClass)) {
                     // First try to construct it based on the last.
                     $modelClass = config('twill.namespace') .
                         '\\Models\\' .
-                        implode('', array_merge($prev + [99 => Str::studly($singularName)]));
+                        implode('', array_merge($prev, [$modelName]));
 
                     // Last option is to search for a capsule model.
                     if (! class_exists($modelClass)) {
-                        $modelClass = TwillCapsules::getCapsuleForModel($name)->getModel();
+                        $modelClass = TwillCapsules::getCapsuleForModel($modelName)->getModel();
                     }
                 }
 
@@ -2395,7 +2438,7 @@ abstract class ModuleController extends Controller
 
                 $base .= $name . '/' . ($hasSlug ? $model->slug : $model->id) . '/';
 
-                $prev[] = Str::studly($singularName);
+                $prev[] = $modelName;
             } else {
                 $base .= $name;
             }
@@ -2631,7 +2674,7 @@ abstract class ModuleController extends Controller
     protected function getGroupUserMapping()
     {
         if (config('twill.enabled.permissions-management')) {
-            return Group::with('users')->get()
+            return twillModel('group')::with('users')->get()
                 ->mapWithKeys(function ($group) {
                     return [$group->id => $group->users()->pluck('id')->toArray()];
                 })->toArray();

@@ -160,6 +160,11 @@
               return parse(date, fullFormatNoTime, Date.UTC());
             }
 
+            if (self.isValidTime(date)) {
+              const currentDate = new Date();
+              date = `${currentDate.toDateString()} ${date}`;
+            }
+
             // Hope for the best..
             return new Date(date);
           },
@@ -172,11 +177,13 @@
 
           },
           onClose: function (selectedDates, dateStr, instance) {
-            self.$emit('input', dateStr)
-            self.$emit('close', dateStr)
+            self.$nextTick(function () { // wait for the datepicker to properly update the UI
+              self.$emit('input', self.date)
+              self.$emit('close', self.date)
 
-            // see formStore mixin
-            self.saveIntoStore()
+              // see formStore mixin
+              self.saveIntoStore()
+            })
           }
         }
 
@@ -207,6 +214,10 @@
         this.saveIntoStore()
 
         this.$emit('input', this.date)
+      },
+      isValidTime: function (string) {
+        const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9](?: (AM|PM))?$/i;
+        return timeRegex.test(string);
       }
     },
     mounted: function () {

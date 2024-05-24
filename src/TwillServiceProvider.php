@@ -27,6 +27,7 @@ use A17\Twill\Commands\SetupDevTools;
 use A17\Twill\Commands\SyncLang;
 use A17\Twill\Commands\Update;
 use A17\Twill\Commands\UpdateExampleCommand;
+use A17\Twill\Commands\UpdateMorphMapReferences;
 use A17\Twill\Http\ViewComposers\CurrentUser;
 use A17\Twill\Http\ViewComposers\FilesUploaderConfig;
 use A17\Twill\Http\ViewComposers\Localization;
@@ -57,7 +58,7 @@ class TwillServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    public const VERSION = '3.0.2';
+    public const VERSION = '3.2.1';
 
     /**
      * Service providers to be registered.
@@ -143,11 +144,11 @@ class TwillServiceProvider extends ServiceProvider
         }
 
         Relation::morphMap([
-            'users' => User::class,
+            'users' => config('twill.models.user', User::class),
             'media' => Media::class,
             'files' => File::class,
-            'blocks' => Block::class,
-            'groups' => Group::class,
+            'blocks' => config('twill.models.block', Block::class),
+            'groups' => config('twill.models.group', Group::class),
         ]);
 
         config(['twill.version' => $this->version()]);
@@ -329,7 +330,9 @@ class TwillServiceProvider extends ServiceProvider
     private function publishOptionalMigration($feature): void
     {
         if (config('twill.enabled.' . $feature, false)) {
-            $this->loadMigrationsFrom(__DIR__ . '/../migrations/optional/' . $feature);
+            if (config('twill.load_default_migrations', true)) {
+                $this->loadMigrationsFrom(__DIR__ . '/../migrations/optional/' . $feature);
+            }
 
             $this->publishes([
                 __DIR__ . '/../migrations/optional/' . $feature => database_path('migrations'),
@@ -377,6 +380,7 @@ class TwillServiceProvider extends ServiceProvider
             GeneratePackageCommand::class,
             TwillFlushManifest::class,
             GenerateBlockComponent::class,
+            UpdateMorphMapReferences::class,
         ];
 
         if (app()->runningInConsole()) {
@@ -503,17 +507,6 @@ class TwillServiceProvider extends ServiceProvider
                 echo \$__env->make('$view', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->with{$expression}->render();
             }
             ?>";
-        });
-
-        $blade->directive('pushonce', function ($expression) {
-            [$pushName, $pushSub] = explode(':', trim(substr($expression, 1, -1)));
-            $key = '__pushonce_' . $pushName . '_' . str_replace('-', '_', $pushSub);
-
-            return "<?php if(! isset(\$__env->{$key})): \$__env->{$key} = 1; \$__env->startPush('{$pushName}'); ?>";
-        });
-
-        $blade->directive('endpushonce', function () {
-            return '<?php $__env->stopPush(); endif; ?>';
         });
 
         $blade->component('twill::partials.form.utils._fieldset', 'formFieldset');
