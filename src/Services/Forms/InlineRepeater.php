@@ -7,7 +7,10 @@ use A17\Twill\Services\Blocks\Block;
 use A17\Twill\Services\Forms\Contracts\CanHaveSubfields;
 use A17\Twill\Services\Forms\Contracts\CanRenderForBlocks;
 use A17\Twill\Services\Forms\Fields\Repeater;
+use A17\Twill\Services\Forms\Traits\HasSubFields;
 use A17\Twill\Services\Forms\Traits\RenderForBlocks;
+use A17\Twill\Services\Forms\Fields\Traits\CanReorder;
+use A17\Twill\Services\Forms\Fields\Traits\DisableActions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -15,6 +18,9 @@ use Illuminate\Support\Str;
 class InlineRepeater implements CanHaveSubfields, CanRenderForBlocks
 {
     use RenderForBlocks;
+    use HasSubFields;
+    use CanReorder;
+    use DisableActions;
 
     protected function __construct(
         private ?string $name = null,
@@ -29,6 +35,7 @@ class InlineRepeater implements CanHaveSubfields, CanRenderForBlocks
         private ?int $max = null,
         private ?string $titleField = null,
         private ?bool $hideTitlePrefix = false,
+        private ?bool $buttonAsLink = false,
         protected ?array $connectedTo = null,
     ) {
     }
@@ -150,6 +157,13 @@ class InlineRepeater implements CanHaveSubfields, CanRenderForBlocks
         return $this;
     }
 
+    public function buttonAsLink(bool $buttonAsLink = true): static
+    {
+        $this->buttonAsLink = $buttonAsLink;
+
+        return $this;
+    }
+
     public function renderForm(): View
     {
         return view('twill::partials.form.renderer.block_form', [
@@ -197,6 +211,8 @@ class InlineRepeater implements CanHaveSubfields, CanRenderForBlocks
             ->name($this->name)
             ->type($this->getRenderName())
             ->allowCreate($this->allowCreate)
+            ->disableReorder(!$this->reorder)
+            ->disableActions(!$this->displayActions)
             ->relation($this->relation ?? null)
             ->browserModule($this->allowBrowse ? $this->browser : null);
 
@@ -207,20 +223,18 @@ class InlineRepeater implements CanHaveSubfields, CanRenderForBlocks
             $repeater->connectedTo($this->connectedTo['fieldName'], $this->connectedTo['fieldValues'], $this->connectedTo);
         }
 
+        if ($this->buttonAsLink) {
+            $repeater->buttonAsLink($this->buttonAsLink);
+        }
+
         $repeater->renderForBlocks = $this->renderForBlocks ?? false;
         return $repeater->render();
     }
 
     public function registerDynamicRepeaters(): void
     {
-        foreach ($this->fields as $field) {
-            if ($field instanceof self) {
-                $field->register();
-            }
-            if ($field instanceof CanHaveSubfields) {
-                $field->registerDynamicRepeaters();
-            }
-        }
+        $this->register();
+        $this->registerDynamicRepeatersFor($this->fields);
     }
 
 

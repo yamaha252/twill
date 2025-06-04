@@ -25,7 +25,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Application strict url handeling
+    | Application strict url handling
     |--------------------------------------------------------------------------
     |
     | Setting this value to true will enable strict domain handling.
@@ -172,7 +172,7 @@ return [
     |--------------------------------------------------------------------------
     |
      */
-    'auth_login_redirect_path' => '/',
+    'auth_login_redirect_path' => null,
 
     'templates_on_frontend_domain' => false,
 
