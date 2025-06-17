@@ -472,7 +472,7 @@ trait HandleBlocks
             } else {
                 try {
                     $relationRepository = $this->getModelRepository($relation);
-                    $relatedItems = $relationRepository->get([], ['id' => $ids], [], -1);
+                    $relatedItems = $relationRepository->get([], [], ['id' => $ids], [], -1);
                 } catch (\Throwable $th) {
                     $relatedItems = collect();
                 }

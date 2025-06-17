@@ -169,6 +169,13 @@ abstract class ModuleController extends Controller
     protected $indexWith = [];
 
     /**
+     * Relation count to eager load for the index view.
+     *
+     * @var array
+     */
+    protected $indexWithCount = [];
+
+    /**
      * Relations to eager load for the form view.
      *
      * @var array
@@ -724,6 +731,14 @@ abstract class ModuleController extends Controller
     protected function eagerLoadListingRelations(array $relations): void
     {
         $this->indexWith = $relations;
+    }
+
+    /**
+     * Relation count to eager load for the index view.
+     */
+    protected function eagerLoadListingRelationCounts(array $relations): void
+    {
+        $this->indexWithCount = $relations;
     }
 
     /**
@@ -1878,6 +1893,7 @@ abstract class ModuleController extends Controller
         return $this->transformIndexItems(
             $this->repository->get(
                 with: $this->indexWith,
+                withCount: $this->indexWithCount,
                 scopes: $scopes,
                 orders: $this->orderScope(),
                 perPage: $this->request->get('offset') ?? $this->perPage ?? 50,
