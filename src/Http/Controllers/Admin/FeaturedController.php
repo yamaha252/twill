@@ -165,6 +165,7 @@ class FeaturedController extends Controller
 
                 $items = $fetchedModules[$module] ?? $repository->get(
                     $bucketable['with'] ?? [],
+                    $bucketable['withCount'] ?? [],
                     $bucketable['scopes'] ?? [],
                     $bucketable['orders'] ?? [],
                     $bucketable['per_page'] ?? $request->get('offset') ?? 10,

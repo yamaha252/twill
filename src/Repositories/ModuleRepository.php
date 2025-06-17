@@ -55,6 +55,7 @@ abstract class ModuleRepository
 
     public function get(
         array $with = [],
+        array $withCount = [],
         array $scopes = [],
         array $orders = [],
         int $perPage = 20,
@@ -62,6 +63,7 @@ abstract class ModuleRepository
         array $appliedFilters = []
     ): LengthAwarePaginator|Collection {
         $query = $this->model->with($with);
+        $query = $this->model->withCount($withCount);
 
         $query = $this->filter($query, $scopes);
         $query = $this->order($query, $orders);

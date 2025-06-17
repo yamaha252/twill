@@ -50,6 +50,7 @@ abstract class NestedModuleController extends ModuleController
 
         return $this->repository->get(
             $this->indexWith,
+            $this->indexWithCount,
             $scopes,
             $this->orderScope(),
             request('offset') ?? $this->perPage ?? 50,
