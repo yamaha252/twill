@@ -13,7 +13,7 @@ class NestedData extends TableColumn
     {
         if ($sortable && $this->sortFunction === null) {
             $this->order(function (Builder $builder, string $direction) {
-                return $builder->withCount($this->field)->orderBy($this->field . '_count', $direction);
+                return $builder->withCount($this->field)->orderBy(Str::snake($this->field) . '_count', $direction);
             });
         }
         return parent::sortable($sortable);
